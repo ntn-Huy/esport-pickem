@@ -3,187 +3,311 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đấu Trường Danh Vọng - Dự Đoán & Tỉ Số</title>
-  <!-- Tailwind CSS & Google Fonts -->
+  <title>AOG Winter - Esport Hub & Pick'em</title>
+  <!-- Tailwind CSS & Supabase & Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #060913; }
     .font-esport { font-family: 'Chakra Petch', sans-serif; }
-    .slanted-left { clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%); }
-    .slanted-right { clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%); }
-    @media (max-width: 640px) {
-      .slanted-left, .slanted-right { clip-path: none; }
-    }
+    .slanted-l { clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+    .slanted-r { clip-path: polygon(12% 0, 100% 0, 100% 100%, 0% 100%); }
+    @media (max-width: 640px) { .slanted-l, .slanted-r { clip-path: none; } }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen pb-12">
+<body class="text-slate-100 min-h-screen">
 
-  <!-- TOP BANNER (Lấy cảm hứng từ Poster ĐTDV Mùa Đông) -->
-  <header class="relative bg-gradient-to-b from-blue-950 via-slate-900 to-[#060913] border-b border-blue-900/40 py-10 px-4 text-center overflow-hidden">
+  <!-- HEADER ESPORTS -->
+  <header class="bg-gradient-to-b from-blue-950 via-slate-900 to-[#060913] border-b border-blue-900/40 py-8 px-4 text-center relative">
     <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-500 via-blue-500 to-indigo-600"></div>
-    <div class="max-w-4xl mx-auto">
-      <div class="inline-flex items-center space-x-2 bg-blue-950/80 border border-blue-700/50 px-3 py-1 rounded-full mb-3">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        <span class="text-[11px] font-esport font-bold tracking-widest text-amber-400 uppercase">Arena of Glory • Winter</span>
-      </div>
-      <h1 class="text-3xl sm:text-5xl font-esport font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 uppercase drop-shadow-lg">
-        KẾT QUẢ THI ĐẤU & DỰ ĐOÁN
+    <div class="max-w-4xl mx-auto flex flex-col items-center">
+      <span class="text-[11px] font-esport font-black tracking-widest text-amber-400 uppercase bg-blue-950/80 border border-blue-700/50 px-3 py-1 rounded-full mb-2">
+        ARENA OF GLORY • WINTER
+      </span>
+      <h1 class="text-3xl sm:text-5xl font-esport font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 uppercase">
+        ĐẤU TRƯỜNG DANH VỌNG
       </h1>
-      <p class="text-slate-400 text-xs sm:text-sm mt-2 font-medium">Cập nhật tỉ số giải đấu & Tranh tài Pick'em bảng xếp hạng</p>
-
-      <!-- Tùy chọn tên người chơi -->
-      <div class="mt-5 inline-flex items-center space-x-2 bg-slate-900/90 border border-slate-700/80 px-4 py-1.5 rounded-full">
-        <span class="text-xs text-slate-400">Người dự đoán:</span>
-        <input id="userNameInput" type="text" value="Fan Liên Quân" onchange="changeUser(this.value)" class="bg-transparent text-amber-400 font-bold text-xs focus:outline-none w-32" />
+      
+      <!-- User info & Admin button -->
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+        <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700 px-3 py-1 rounded-full text-xs">
+          <span class="text-slate-400">Người dự đoán:</span>
+          <input id="userNameInput" type="text" value="Fan Liên Quân" onchange="changeUser(this.value)" class="bg-transparent text-amber-400 font-bold focus:outline-none w-28" />
+        </div>
+        <button onclick="toggleAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full text-xs font-bold transition-all">
+          ⚙️ Quản Trị (Admin)
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- NỘI DUNG CHÍNH -->
-  <main class="max-w-3xl mx-auto px-4 mt-6">
-    <!-- Tabs -->
-    <div class="flex border-b border-slate-800 mb-6 font-esport text-sm font-bold">
-      <button onclick="switchTab('matches')" id="tabMatches" class="pb-3 px-5 text-amber-400 border-b-2 border-amber-400 tracking-wider">LỊCH & DỰ ĐOÁN</button>
-      <button onclick="switchTab('standings')" id="tabStandings" class="pb-3 px-5 text-slate-400 hover:text-slate-200 tracking-wider">BẢNG XẾP HẠNG</button>
+  <!-- NAVIGATION TABS -->
+  <nav class="max-w-4xl mx-auto px-4 mt-6">
+    <div class="flex border-b border-slate-800 font-esport text-xs sm:text-sm font-bold gap-2 sm:gap-6 overflow-x-auto pb-1">
+      <button onclick="setMainTab('matches')" id="tabMatches" class="pb-3 px-3 text-amber-400 border-b-2 border-amber-400 whitespace-nowrap">LỊCH & DỰ ĐOÁN</button>
+      <button onclick="setMainTab('playoff')" id="tabPlayoff" class="pb-3 px-3 text-slate-400 hover:text-slate-200 whitespace-nowrap">NHÁNH PLAYOFF</button>
+      <button onclick="setMainTab('standings')" id="tabStandings" class="pb-3 px-3 text-slate-400 hover:text-slate-200 whitespace-nowrap">BẢNG XẾP HẠNG</button>
+    </div>
+  </nav>
+
+  <!-- NỘI DUNG 1: TRẬN ĐẤU & DỰ ĐOÁN -->
+  <section id="viewMatches" class="max-w-4xl mx-auto px-4 mt-6">
+    <!-- Bộ Lọc Tuần Đấu (Week Selector) -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-3 mb-4 font-esport text-xs" id="weekFilters">
+      <!-- Sẽ sinh ra tự động: [Tất cả], [Tuần 1], [Tuần 2]... -->
     </div>
 
-    <!-- Danh sách trận đấu -->
-    <div id="matchesContainer" class="space-y-4">
-      <div class="text-center py-10 text-slate-500 text-sm">Đang tải dữ liệu trận đấu...</div>
-    </div>
+    <!-- Danh sách các trận đấu -->
+    <div id="matchesList" class="space-y-4"></div>
+  </section>
 
-    <!-- Tab Bảng xếp hạng -->
-    <div id="standingsContainer" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-2xl">
-      <h3 class="font-esport text-amber-400 font-bold uppercase tracking-wider mb-4 text-base">BẢNG TỔNG SẮP VÒNG BẢNG</h3>
-      <div id="standingsList" class="space-y-2.5"></div>
+  <!-- NỘI DUNG 2: PLAYOFF BRACKET (Nhánh Thắng / Nhánh Thua) -->
+  <section id="viewPlayoff" class="max-w-4xl mx-auto px-4 mt-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-slate-900 border border-blue-900/40 rounded-xl p-4">
+        <h3 class="font-esport text-blue-400 font-bold uppercase mb-4 text-sm border-b border-slate-800 pb-2">Nhánh Thắng (Upper Bracket)</h3>
+        <div id="upperBracketMatches" class="space-y-3"></div>
+      </div>
+      <div class="bg-slate-900 border border-red-900/40 rounded-xl p-4">
+        <h3 class="font-esport text-red-400 font-bold uppercase mb-4 text-sm border-b border-slate-800 pb-2">Nhánh Thua (Lower Bracket)</h3>
+        <div id="lowerBracketMatches" class="space-y-3"></div>
+      </div>
     </div>
-  </main>
+  </section>
+
+  <!-- NỘI DUNG 3: BẢNG XẾP HẠNG -->
+  <section id="viewStandings" class="max-w-4xl mx-auto px-4 mt-6 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-2xl">
+      <h3 class="font-esport text-amber-400 font-bold uppercase mb-4 text-base">BẢNG XẾP HẠNG VÒNG BẢNG</h3>
+      <div id="standingsTable" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- MODAL ADMIN (QUẢN TRỊ VIÊN ĐỘI TUYỂN & TRẬN ĐẤU) -->
+  <div id="adminModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h2 class="font-esport text-lg font-bold text-amber-400 uppercase">Bảng Quản Trị Giải Đấu</h2>
+        <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+      </div>
+
+      <!-- Thêm / Sửa Đội Tuyển -->
+      <div class="mt-4 border border-slate-800 p-4 rounded-lg bg-slate-950/60">
+        <h3 class="font-bold text-sm text-slate-300 mb-2">Thêm Đội Tuyển Mới</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <input id="newTeamId" placeholder="Mã (vd: sgp)" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <input id="newTeamName" placeholder="Tên (vd: Saigon Phantom)" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <input id="newTeamShort" placeholder="Viết tắt (vd: SGP)" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <input id="newTeamColor" type="color" value="#1e40af" class="bg-slate-800 h-9 w-full rounded border border-slate-700 cursor-pointer">
+          <input id="newTeamLogo" placeholder="Link ảnh Logo URL" class="col-span-2 sm:col-span-3 bg-slate-800 p-2 rounded border border-slate-700">
+          <button onclick="saveTeam()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold p-2 rounded">Thêm Đội</button>
+        </div>
+      </div>
+
+      <!-- Thêm / Sửa Trận Đấu -->
+      <div class="mt-4 border border-slate-800 p-4 rounded-lg bg-slate-950/60">
+        <h3 class="font-bold text-sm text-slate-300 mb-2">Thêm Trận Đấu / Nhập Tỉ Số Thực Tế</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+          <input id="matchWeek" placeholder="Tuần (vd: Tuần 1, Playoff)" value="Tuần 1" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <select id="matchStage" class="bg-slate-800 p-2 rounded border border-slate-700">
+            <option value="group">Vòng Bảng</option>
+            <option value="upper_bracket">Playoff - Nhánh Thắng</option>
+            <option value="lower_bracket">Playoff - Nhánh Thua</option>
+          </select>
+          <input id="matchBo" type="number" placeholder="Bo (3, 5, 7)" value="5" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <select id="matchT1" class="bg-slate-800 p-2 rounded border border-slate-700"></select>
+          <select id="matchT2" class="bg-slate-800 p-2 rounded border border-slate-700"></select>
+          <input id="matchDate" placeholder="Ngày (vd: 30/08)" value="30/08" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <input id="realScore1" type="number" placeholder="Tỉ số Đội 1" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <input id="realScore2" type="number" placeholder="Tỉ số Đội 2" class="bg-slate-800 p-2 rounded border border-slate-700">
+          <select id="matchStatus" class="bg-slate-800 p-2 rounded border border-slate-700">
+            <option value="upcoming">Sắp diễn ra</option>
+            <option value="completed">Đã kết thúc</option>
+            <option value="live">Đang đấu (Live)</option>
+          </select>
+          <button onclick="saveMatch()" class="col-span-2 sm:col-span-3 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded mt-2">Lưu Trận Đấu</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // === CẤU HÌNH SUPABASE (THAY 2 DÒNG DƯỚI ĐÂY BẰNG KEY CỦA BẠN TỪ BƯỚC 1) ===
-    const SUPABASE_URL = "https://wzyfsbyoecrfxkulkrrm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable__TLN402YE_M6AC_iiShkTw_tf0sls9d";
+    // == 1. CẤU HÌNH KẾT NỐI SUPABASE ==
+    const SUPABASE_URL = "https://thay-bang-project-id.supabase.co";
+    const SUPABASE_ANON_KEY = "thay-bang-anon-key-cua-ban";
     
-    // Tự kiểm tra nếu chưa cấu hình thì chạy demo offline
     const isConfigured = !SUPABASE_URL.includes("thay-bang");
     const supabaseClient = isConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    // Dữ liệu mẫu (sử dụng ngay khi chưa gắn Supabase)
-    const defaultTeams = {
-      'ts': { id: 'ts', name: 'Team Secret', short_name: 'TEAM SECRET', logo: 'https://liquipedia.net/commons/images/8/87/Team_Secret_allmode.png', color: '#475569' },
-      'fpt': { id: 'fpt', name: 'FPT Flash', short_name: 'FPT FLASH', logo: 'https://liquipedia.net/commons/images/3/36/Team_Flash_2024_allmode.png', color: '#ea580c' },
-      '1s': { id: '1s', name: 'One Star Esports', short_name: 'ONE STAR', logo: 'https://liquipedia.net/commons/images/4/47/One_Star_Esports_allmode.png', color: '#dc2626' },
-      'rrq': { id: 'rrq', name: 'Rex Regum Qeon', short_name: 'RRQ', logo: 'https://liquipedia.net/commons/images/6/67/Rex_Regum_Qeon_allmode.png', color: '#ca8a04' },
-      'sgp': { id: 'sgp', name: 'Saigon Phantom', short_name: 'SGP', logo: 'https://liquipedia.net/commons/images/d/d7/Saigon_Phantom_2023_allmode.png', color: '#eab308' },
-      'tdt': { id: 'tdt', name: 'The DareDevil Team', short_name: 'TDT', logo: 'https://liquipedia.net/commons/images/2/29/The_DareDevil_Team_allmode.png', color: '#7c3aed' }
+    // Dữ liệu nội bộ khi chưa kết nối
+    let teams = JSON.parse(localStorage.getItem('esport_teams')) || {
+      'ts':  { id: 'ts', name: 'Team Secret', short_name: 'TEAM SECRET', logo_url: 'https://liquipedia.net/commons/images/8/87/Team_Secret_allmode.png', primary_color: '#475569' },
+      'fpt': { id: 'fpt', name: 'FPT Flash', short_name: 'FPT FLASH', logo_url: 'https://liquipedia.net/commons/images/3/36/Team_Flash_2024_allmode.png', primary_color: '#ea580c' },
+      '1s':  { id: '1s', name: 'One Star Esports', short_name: 'ONE STAR', logo_url: 'https://liquipedia.net/commons/images/4/47/One_Star_Esports_allmode.png', primary_color: '#dc2626' },
+      'rrq': { id: 'rrq', name: 'Rex Regum Qeon', short_name: 'RRQ', logo_url: 'https://liquipedia.net/commons/images/6/67/Rex_Regum_Qeon_allmode.png', primary_color: '#ca8a04' },
+      'sgp': { id: 'sgp', name: 'Saigon Phantom', short_name: 'SGP', logo_url: 'https://liquipedia.net/commons/images/d/d7/Saigon_Phantom_2023_allmode.png', primary_color: '#eab308' },
+      'tdt': { id: 'tdt', name: 'The DareDevil Team', short_name: 'TDT', logo_url: 'https://liquipedia.net/commons/images/2/29/The_DareDevil_Team_allmode.png', primary_color: '#7c3aed' }
     };
 
-    let matchesData = [
-      { id: 'm1', round: 'VÒNG BẢNG - LƯỢT ĐI', t1: 'ts', t2: 'fpt', s1: 1, s2: 3, date: '30/08', status: 'completed' },
-      { id: 'm2', round: 'VÒNG BẢNG - LƯỢT ĐI', t1: '1s', t2: 'rrq', s1: 3, s2: 1, date: '30/08', status: 'completed' },
-      { id: 'm3', round: 'VÒNG BẢNG - LƯỢT ĐI', t1: 'sgp', t2: 'tdt', s1: 3, s2: 2, date: '30/08', status: 'completed' },
-      { id: 'm4', round: 'VÒNG BẢNG - LƯỢT ĐI', t1: 'sgp', t2: 'fpt', s1: null, s2: null, date: '05/09', status: 'upcoming' }
+    let matches = JSON.parse(localStorage.getItem('esport_matches')) || [
+      { id: 'm1', week: 'Tuần 1', stage: 'group', round_name: 'Vòng Bảng - Lượt Đi', team1_id: 'ts', team2_id: 'fpt', score_team1: 1, score_team2: 3, bo_format: 5, match_date: '30/08', status: 'completed' },
+      { id: 'm2', week: 'Tuần 1', stage: 'group', round_name: 'Vòng Bảng - Lượt Đi', team1_id: '1s', team2_id: 'rrq', score_team1: 3, score_team2: 1, bo_format: 5, match_date: '30/08', status: 'completed' },
+      { id: 'm3', week: 'Tuần 1', stage: 'group', round_name: 'Vòng Bảng - Lượt Đi', team1_id: 'sgp', team2_id: 'tdt', score_team1: 3, score_team2: 2, bo_format: 5, match_date: '30/08', status: 'completed' },
+      { id: 'm4', week: 'Tuần 2', stage: 'group', round_name: 'Vòng Bảng - Tuần 2', team1_id: 'sgp', team2_id: 'fpt', score_team1: null, score_team2: null, bo_format: 5, match_date: '06/09', status: 'upcoming' },
+      { id: 'p1', week: 'Playoff', stage: 'upper_bracket', round_name: 'Tứ Kết Nhánh Thắng', team1_id: 'sgp', team2_id: '1s', score_team1: null, score_team2: null, bo_format: 7, match_date: '20/09', status: 'upcoming' }
     ];
 
-    let predictions = JSON.parse(localStorage.getItem('my_predictions') || '{}');
-    let currentUser = localStorage.getItem('pickem_user') || 'Fan Liên Quân';
+    let predictions = JSON.parse(localStorage.getItem('esport_predictions')) || {};
+    let selectedWeek = 'Tất cả';
+    let currentUser = localStorage.getItem('esport_user') || 'Fan Liên Quân';
     document.getElementById('userNameInput').value = currentUser;
 
-    function changeUser(val) {
-      currentUser = val;
-      localStorage.setItem('pickem_user', val);
-      loadData();
+    function changeUser(v) {
+      currentUser = v;
+      localStorage.setItem('esport_user', v);
+      init();
     }
 
-    async function loadData() {
-      // Nếu có cấu hình Supabase thật, lấy từ server
+    async function init() {
       if (supabaseClient) {
         try {
-          const { data: dbMatches } = await supabaseClient.from('matches').select('*');
-          if (dbMatches && dbMatches.length > 0) {
-            matchesData = dbMatches.map(m => ({
-              id: m.id, round: m.round_name, t1: m.team1_id, t2: m.team2_id,
-              s1: m.score_team1, s2: m.score_team2, date: m.match_date, status: m.status
-            }));
+          const { data: tData } = await supabaseClient.from('teams').select('*');
+          if (tData && tData.length) {
+            teams = {};
+            tData.forEach(t => teams[t.id] = t);
           }
-          const { data: dbPreds } = await supabaseClient.from('predictions').select('*').eq('user_name', currentUser);
-          if (dbPreds) {
-            dbPreds.forEach(p => { predictions[p.match_id] = { winner: p.winner_id, s1: p.score_1, s2: p.score_2 }; });
+          const { data: mData } = await supabaseClient.from('matches').select('*');
+          if (mData && mData.length) matches = mData;
+
+          const { data: pData } = await supabaseClient.from('predictions').select('*').eq('user_name', currentUser);
+          if (pData) {
+            predictions = {};
+            pData.forEach(p => predictions[p.match_id] = p);
           }
-        } catch(e) { console.warn("Dùng chế độ local", e); }
+        } catch(e) { console.error(e); }
       }
+      renderWeeks();
       renderMatches();
+      renderPlayoff();
       renderStandings();
+      updateAdminSelects();
     }
 
+    // == 2. RENDER TUẦN ĐẤU ==
+    function renderWeeks() {
+      const weeks = ['Tất cả', ...new Set(matches.map(m => m.week))];
+      const container = document.getElementById('weekFilters');
+      container.innerHTML = weeks.map(w => `
+        <button onclick="filterWeek('${w}')" class="px-3 py-1.5 rounded-lg font-bold transition-all ${
+          selectedWeek === w ? 'bg-amber-500 text-slate-950 shadow-lg' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+        }">${w}</button>
+      `).join('');
+    }
+
+    function filterWeek(w) {
+      selectedWeek = w;
+      renderWeeks();
+      renderMatches();
+    }
+
+    // == 3. RENDER TRẬN ĐẤU & PICK'EM SO SÁNH ==
     function renderMatches() {
-      const container = document.getElementById('matchesContainer');
-      container.innerHTML = matchesData.map(m => {
-        const t1 = defaultTeams[m.t1] || { short_name: m.t1, color: '#334155', logo: '' };
-        const t2 = defaultTeams[m.t2] || { short_name: m.t2, color: '#1e293b', logo: '' };
-        const pred = predictions[m.id];
+      const list = document.getElementById('matchesList');
+      const filtered = matches.filter(m => (selectedWeek === 'Tất cả' || m.week === selectedWeek) && m.stage === 'group');
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs font-esport">KHÔNG CÓ TRẬN ĐẤU TRONG TUẦN NÀY</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(m => {
+        const t1 = teams[m.team1_id] || { short_name: m.team1_id, primary_color: '#334155', logo_url: '' };
+        const t2 = teams[m.team2_id] || { short_name: m.team2_id, primary_color: '#1e293b', logo_url: '' };
         const isDone = m.status === 'completed';
+        const pred = predictions[m.id];
+
+        // Tính điểm: +5đ đúng tỉ số, +3đ đúng đội thắng
+        let pts = 0;
+        let resultText = '';
+        if (isDone && pred) {
+          if (pred.score_1 === m.score_team1 && pred.score_2 === m.score_team2) {
+            pts = 5;
+            resultText = '<span class="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">+5đ (Chính xác tỉ số!)</span>';
+          } else if (
+            (pred.score_1 > pred.score_2 && m.score_team1 > m.score_team2) ||
+            (pred.score_2 > pred.score_1 && m.score_team2 > m.score_team1)
+          ) {
+            pts = 3;
+            resultText = '<span class="text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">+3đ (Đúng đội thắng)</span>';
+          } else {
+            resultText = '<span class="text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">0đ (Dự đoán sai)</span>';
+          }
+        }
 
         return `
-          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
             <!-- Header bar -->
-            <div class="flex justify-between items-center px-4 py-2 bg-slate-950/90 text-xs font-esport tracking-widest text-slate-400 border-b border-slate-800/80">
-              <span class="text-amber-400 font-bold">${m.round}</span>
-              <span>NGÀY ${m.date}</span>
+            <div class="flex justify-between items-center px-4 py-2 bg-slate-950 text-[11px] font-esport tracking-widest text-slate-400 border-b border-slate-800">
+              <span class="text-amber-400 font-bold">${m.round_name} • Bo${m.bo_format} • ${m.week}</span>
+              <span>NGÀY ${m.match_date}</span>
             </div>
 
-            <!-- Match Clash Banner (Slanted Cut) -->
-            <div class="grid grid-cols-12 h-20 sm:h-24 relative overflow-hidden bg-slate-950">
-              <!-- Đội 1 -->
-              <div onclick="makePrediction('${m.id}', '${m.t1}', 3, 1, ${isDone})" 
-                   style="background-color: ${t1.color};" 
-                   class="col-span-5 slanted-left flex items-center justify-between px-4 cursor-pointer hover:brightness-110 transition-all select-none">
-                <div class="flex items-center space-x-3">
-                  <img src="${t1.logo}" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-md">
-                  <span class="text-white font-esport font-extrabold text-sm sm:text-base">${t1.short_name}</span>
+            <!-- BẢNG TỈ SỐ THỰC TẾ (Slanted Clash) -->
+            <div class="grid grid-cols-12 h-20 sm:h-24 bg-slate-950 relative">
+              <div style="background-color: ${t1.primary_color};" class="col-span-5 slanted-l flex items-center justify-between px-4">
+                <div class="flex items-center space-x-2">
+                  <img src="${t1.logo_url}" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow">
+                  <span class="text-white font-esport font-black text-sm sm:text-base">${t1.short_name}</span>
                 </div>
               </div>
 
-              <!-- Tỉ số ở giữa -->
               <div class="col-span-2 flex flex-col items-center justify-center bg-slate-950 z-10">
                 ${isDone ? `
                   <div class="font-esport font-black text-2xl sm:text-3xl flex items-center space-x-1.5">
-                    <span class="${m.s1 > m.s2 ? 'text-amber-400' : 'text-slate-400'}">${m.s1}</span>
-                    <span class="text-slate-600 text-sm">:</span>
-                    <span class="${m.s2 > m.s1 ? 'text-amber-400' : 'text-slate-400'}">${m.s2}</span>
+                    <span class="${m.score_team1 > m.score_team2 ? 'text-amber-400' : 'text-slate-400'}">${m.score_team1}</span>
+                    <span class="text-slate-600 text-xs">:</span>
+                    <span class="${m.score_team2 > m.score_team1 ? 'text-amber-400' : 'text-slate-400'}">${m.score_team2}</span>
                   </div>
+                  <span class="text-[9px] text-slate-500 font-bold uppercase">Thực tế</span>
                 ` : `
-                  <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] font-black">VS</span>
+                  <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black">VS</span>
+                  <span class="text-[9px] text-slate-500 mt-1 uppercase">${m.status === 'live' ? 'Đang đấu' : 'Chưa đấu'}</span>
                 `}
               </div>
 
-              <!-- Đội 2 -->
-              <div onclick="makePrediction('${m.id}', '${m.t2}', 1, 3, ${isDone})" 
-                   style="background-color: ${t2.color};" 
-                   class="col-span-5 slanted-right flex items-center justify-between flex-row-reverse px-4 cursor-pointer hover:brightness-110 transition-all select-none">
-                <div class="flex items-center flex-row-reverse space-x-reverse space-x-3">
-                  <img src="${t2.logo}" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-md">
-                  <span class="text-white font-esport font-extrabold text-sm sm:text-base">${t2.short_name}</span>
+              <div style="background-color: ${t2.primary_color};" class="col-span-5 slanted-r flex items-center justify-between flex-row-reverse px-4">
+                <div class="flex items-center flex-row-reverse space-x-reverse space-x-2">
+                  <img src="${t2.logo_url}" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow">
+                  <span class="text-white font-esport font-black text-sm sm:text-base">${t2.short_name}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Thanh dự đoán bên dưới -->
-            <div class="px-4 py-2 bg-slate-950/70 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <!-- THANH DỰ ĐOÁN & TÙY CHỈNH TỈ SỐ -->
+            <div class="px-4 py-2.5 bg-slate-950/80 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs gap-2">
               <div class="flex items-center space-x-2">
-                <span class="text-slate-400">Bạn chọn:</span>
-                ${pred ? `
-                  <span class="text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 font-esport">
-                    ${defaultTeams[pred.winner]?.short_name} thắng (${pred.s1} - ${pred.s2})
+                <span class="text-slate-400 font-bold">Dự đoán của bạn:</span>
+                ${isDone ? `
+                  <span class="font-esport font-bold text-slate-200">
+                    ${pred ? `${teams[pred.winner_id]?.short_name || ''} (${pred.score_1} - ${pred.score_2})` : '<i class="text-slate-500">Không dự đoán</i>'}
                   </span>
                 ` : `
-                  <span class="text-slate-500 italic">Bấm vào đội để dự đoán</span>
+                  <!-- Chọn tỉ số nhanh -->
+                  <div class="inline-flex items-center space-x-1 font-esport">
+                    <button onclick="pickScore('${m.id}', '${m.team1_id}', 3, 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">3-0</button>
+                    <button onclick="pickScore('${m.id}', '${m.team1_id}', 3, 1)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">3-1</button>
+                    <button onclick="pickScore('${m.id}', '${m.team1_id}', 3, 2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">3-2</button>
+                    <span class="text-slate-600 px-1">|</span>
+                    <button onclick="pickScore('${m.id}', '${m.team2_id}', 2, 3)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">2-3</button>
+                    <button onclick="pickScore('${m.id}', '${m.team2_id}', 1, 3)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">1-3</button>
+                    <button onclick="pickScore('${m.id}', '${m.team2_id}', 0, 3)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-bold">0-3</button>
+                  </div>
                 `}
+              </div>
+              <div>
+                ${resultText || (pred ? `<span class="text-amber-400 font-bold font-esport">Đã lưu: ${teams[pred.winner_id]?.short_name} (${pred.score_1}-${pred.score_2})</span>` : '')}
               </div>
             </div>
           </div>
@@ -191,13 +315,11 @@
       }).join('');
     }
 
-    async function makePrediction(matchId, winnerId, s1, s2, isDone) {
-      if (isDone) return; // Trận đấu đã xong không cho sửa
-      predictions[matchId] = { winner: winnerId, s1, s2 };
-      localStorage.setItem('my_predictions', JSON.stringify(predictions));
+    async function pickScore(matchId, winnerId, s1, s2) {
+      predictions[matchId] = { winner_id: winnerId, score_1: s1, score_2: s2 };
+      localStorage.setItem('esport_predictions', JSON.stringify(predictions));
       renderMatches();
 
-      // Lưu lên Supabase nếu có
       if (supabaseClient) {
         await supabaseClient.from('predictions').upsert({
           user_name: currentUser,
@@ -209,32 +331,114 @@
       }
     }
 
+    // == 4. RENDER PLAYOFF ==
+    function renderPlayoff() {
+      const upper = matches.filter(m => m.stage === 'upper_bracket');
+      const lower = matches.filter(m => m.stage === 'lower_bracket');
+
+      const card = (m) => `
+        <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+          <div>
+            <div class="text-[10px] text-amber-400 font-bold uppercase mb-1">${m.round_name} (Bo${m.bo_format})</div>
+            <div class="font-bold">${teams[m.team1_id]?.short_name || 'TBD'} vs ${teams[m.team2_id]?.short_name || 'TBD'}</div>
+          </div>
+          <div class="font-esport font-black text-sm text-slate-300">
+            ${m.score_team1 !== null ? `${m.score_team1} : ${m.score_team2}` : 'Chưa đấu'}
+          </div>
+        </div>
+      `;
+      document.getElementById('upperBracketMatches').innerHTML = upper.length ? upper.map(card).join('') : '<div class="text-slate-500 text-xs">Chưa có trận nhánh thắng</div>';
+      document.getElementById('lowerBracketMatches').innerHTML = lower.length ? lower.map(card).join('') : '<div class="text-slate-500 text-xs">Chưa có trận nhánh thua</div>';
+    }
+
+    // == 5. RENDER BẢNG XẾP HẠNG ==
     function renderStandings() {
-      const container = document.getElementById('standingsList');
-      container.innerHTML = Object.values(defaultTeams).map((team, idx) => `
+      const container = document.getElementById('standingsTable');
+      container.innerHTML = Object.values(teams).map((t, idx) => `
         <div class="flex items-center justify-between p-3 bg-slate-950/60 rounded-lg border border-slate-800">
           <div class="flex items-center space-x-3">
             <span class="font-esport font-bold text-slate-500 w-4">${idx + 1}</span>
-            <img src="${team.logo}" class="w-6 h-6 object-contain">
-            <span class="font-bold text-sm text-slate-200">${team.name}</span>
+            <img src="${t.logo_url}" class="w-6 h-6 object-contain">
+            <span class="font-bold text-sm">${t.name}</span>
           </div>
-          <span class="font-esport text-xs font-extrabold px-2.5 py-1 rounded bg-slate-800 text-amber-400">${team.short_name}</span>
+          <span class="font-esport text-xs font-black px-2.5 py-1 rounded bg-slate-800 text-amber-400">${t.short_name}</span>
         </div>
       `).join('');
     }
 
-    function switchTab(tab) {
-      document.getElementById('matchesContainer').classList.toggle('hidden', tab !== 'matches');
-      document.getElementById('standingsContainer').classList.toggle('hidden', tab !== 'standings');
-      document.getElementById('tabMatches').className = tab === 'matches' 
-        ? 'pb-3 px-5 text-amber-400 border-b-2 border-amber-400 tracking-wider' 
-        : 'pb-3 px-5 text-slate-400 hover:text-slate-200 tracking-wider';
-      document.getElementById('tabStandings').className = tab === 'standings' 
-        ? 'pb-3 px-5 text-amber-400 border-b-2 border-amber-400 tracking-wider' 
-        : 'pb-3 px-5 text-slate-400 hover:text-slate-200 tracking-wider';
+    // == 6. CHỨC NĂNG ADMIN TRỰC TIẾP TRÊN WEB ==
+    function toggleAdminModal() {
+      document.getElementById('adminModal').classList.toggle('hidden');
     }
 
-    loadData();
+    function updateAdminSelects() {
+      const opts = Object.values(teams).map(t => `<option value="${t.id}">${t.short_name} (${t.name})</option>`).join('');
+      document.getElementById('matchT1').innerHTML = opts;
+      document.getElementById('matchT2').innerHTML = opts;
+    }
+
+    async function saveTeam() {
+      const id = document.getElementById('newTeamId').value.trim();
+      const name = document.getElementById('newTeamName').value.trim();
+      const short_name = document.getElementById('newTeamShort').value.trim();
+      const logo_url = document.getElementById('newTeamLogo').value.trim();
+      const primary_color = document.getElementById('newTeamColor').value;
+
+      if (!id || !name || !short_name) return alert('Vui lòng điền đủ Mã, Tên và Tên viết tắt!');
+      
+      const newTeam = { id, name, short_name, logo_url, primary_color };
+      teams[id] = newTeam;
+      localStorage.setItem('esport_teams', JSON.stringify(teams));
+
+      if (supabaseClient) {
+        await supabaseClient.from('teams').upsert(newTeam);
+      }
+      alert('Thêm đội thành công!');
+      init();
+    }
+
+    async function saveMatch() {
+      const week = document.getElementById('matchWeek').value;
+      const stage = document.getElementById('matchStage').value;
+      const bo = parseInt(document.getElementById('matchBo').value) || 5;
+      const t1 = document.getElementById('matchT1').value;
+      const t2 = document.getElementById('matchT2').value;
+      const date = document.getElementById('matchDate').value;
+      const s1 = document.getElementById('realScore1').value === '' ? null : parseInt(document.getElementById('realScore1').value);
+      const s2 = document.getElementById('realScore2').value === '' ? null : parseInt(document.getElementById('realScore2').value);
+      const status = document.getElementById('matchStatus').value;
+
+      const newMatch = {
+        id: 'm_' + Date.now(),
+        week, stage, round_name: `${week} - Trận Đấu`,
+        team1_id: t1, team2_id: t2,
+        score_team1: s1, score_team2: s2,
+        bo_format: bo, match_date: date, status
+      };
+
+      matches.push(newMatch);
+      localStorage.setItem('esport_matches', JSON.stringify(matches));
+
+      if (supabaseClient) {
+        await supabaseClient.from('matches').upsert(newMatch);
+      }
+      alert('Đã lưu trận đấu thành công!');
+      toggleAdminModal();
+      init();
+    }
+
+    function setMainTab(tab) {
+      document.getElementById('viewMatches').classList.toggle('hidden', tab !== 'matches');
+      document.getElementById('viewPlayoff').classList.toggle('hidden', tab !== 'playoff');
+      document.getElementById('viewStandings').classList.toggle('hidden', tab !== 'standings');
+      ['tabMatches', 'tabPlayoff', 'tabStandings'].forEach(id => {
+        document.getElementById(id).className = 'pb-3 px-3 text-slate-400 hover:text-slate-200 whitespace-nowrap';
+      });
+      const activeId = tab === 'matches' ? 'tabMatches' : (tab === 'playoff' ? 'tabPlayoff' : 'tabStandings');
+      document.getElementById(activeId).className = 'pb-3 px-3 text-amber-400 border-b-2 border-amber-400 whitespace-nowrap';
+    }
+
+    init();
   </script>
 </body>
 </html>
