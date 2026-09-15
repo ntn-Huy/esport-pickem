@@ -2,7 +2,7 @@ name: Sync Liquipedia Real
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Chạy tự động mỗi 4 tiếng
+    - cron: '0 */4 * * *' # Tự động chạy mỗi 4 tiếng
   workflow_dispatch:      # Nút bấm thủ công
 
 jobs:
@@ -12,13 +12,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Cài đặt thư viện
-        run: npm install @supabase/supabase-js
+        run: npm install @supabase/supabase-js ws
 
       - name: Đồng bộ tỉ số từ Liquipedia
         env:
@@ -28,54 +28,54 @@ jobs:
           node - << 'EOF'
           const { createClient } = require('@supabase/supabase-js');
 
-          // Đường dẫn giải ĐTDV từ Liquipedia
           const PAGE_TITLE = "Arena_of_Glory/2026/Winter/Group_Stage";
           const LIQUIPEDIA_API = `https://liquipedia.net/honorofkings/api.php?action=parse&page=${encodeURIComponent(PAGE_TITLE)}&prop=wikitext&format=json`;
 
-          async function main() {
+          async function run() {
             const url = process.env.SUPABASE_URL;
             const key = process.env.SUPABASE_ANON_KEY;
 
             console.log("=== BẮT ĐẦU QUÁ TRÌNH ĐỒNG BỘ ===");
-            
-            // 1. Kiểm tra Secrets
+
             if (!url || !key) {
-              console.error("❌ LỖI: Bạn chưa thêm Secrets VITE_SUPABASE_URL hoặc VITE_SUPABASE_ANON_KEY trong Settings -> Secrets của GitHub!");
+              console.error("❌ LỖI: Chưa tìm thấy VITE_SUPABASE_URL hoặc VITE_SUPABASE_ANON_KEY trong Secrets.");
               process.exit(1);
             }
-            console.log("✔ Đã tìm thấy thông tin kết nối Supabase.");
 
-            const supabase = createClient(url, key);
+            // Khởi tạo Supabase client và tắt realtime socket để không bị lỗi kết nối
+            const supabase = createClient(url, key, {
+              auth: { persistSession: false },
+              realtime: { createSocket: () => null }
+            });
 
-            // 2. Gửi request đến Liquipedia với Header chuẩn chống chặn
-            console.log(`📡 Đang tải dữ liệu từ trang: ${PAGE_TITLE}...`);
+            console.log("✔ Kết nối Supabase thành công. Đang tải trang giải đấu...");
+
             const res = await fetch(LIQUIPEDIA_API, {
               headers: {
-                "User-Agent": "AOGEsportViewer/2.1 (contact: viewer@liquipedia-project.org)",
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip, deflate"
+                "User-Agent": "AOGEsportScraper/3.0 (contact: admin@esport-hub.org)",
+                "Accept-Encoding": "gzip"
               }
             });
 
             if (!res.ok) {
-              console.error(`❌ Liquipedia phản hồi mã lỗi HTTP: ${res.status} (${res.statusText})`);
-              console.log("Gợi ý: Nếu báo lỗi 404, giải đấu 2026 có thể chưa mở trang wikitext chính thức hoặc đã đổi tên đường dẫn.");
+              console.error(`❌ Liquipedia phản hồi HTTP ${res.status}`);
               return;
             }
 
             const json = await res.json();
             const text = json.parse?.wikitext?.["*"] || "";
-            
+
             if (!text) {
-              console.log("⚠ Trang Liquipedia hiện chưa có nội dung wikitext hoặc trang rỗng.");
+              console.log("⚠ Trang Liquipedia không có nội dung wikitext.");
               return;
             }
-            console.log("✔ Tải dữ liệu thành công! Đang phân tích kết quả các trận đấu...");
 
-            // 3. Quét kết quả trận đấu
+            console.log("✔ Tải dữ liệu giải đấu thành công. Đang phân tích kết quả...");
+
+            // Bắt cặp đấu và kết quả tỉ số
             const regex = /team1=([^\n|]+)[\s\S]*?team2=([^\n|]+)[\s\S]*?games1=(\d+)[\s\S]*?games2=(\d+)/gi;
             let match;
-            let updatedCount = 0;
+            let count = 0;
 
             while ((match = regex.exec(text)) !== null) {
               const [, t1, t2, g1, g2] = match;
@@ -84,10 +84,10 @@ jobs:
               const team1 = t1.trim().toLowerCase();
               const team2 = t2.trim().toLowerCase();
 
-              console.log(`🔎 Trận: ${t1.trim()} [${s1} - ${s2}] ${t2.trim()}`);
+              console.log(`🔎 [${t1.trim()}] ${s1} - ${s2} [${t2.trim()}]`);
 
               if (s1 > 0 || s2 > 0) {
-                // Cập nhật vào bảng matches trong Supabase
+                // Cập nhật kết quả vào Supabase
                 const { error } = await supabase
                   .from('matches')
                   .update({
@@ -98,18 +98,18 @@ jobs:
                   .or(`and(team1_id.eq.${team1},team2_id.eq.${team2}),and(team1_id.eq.${team2},team2_id.eq.${team1})`);
 
                 if (error) {
-                  console.warn(`  ↳ Cảnh báo cập nhật DB: ${error.message}`);
+                  console.warn(`  ↳ Cảnh báo: ${error.message}`);
                 } else {
-                  updatedCount++;
+                  count++;
                 }
               }
             }
 
-            console.log(`\n🎉 HOÀN THÀNH: Đã đồng bộ thành công ${updatedCount} trận đấu vào Supabase!`);
+            console.log(`\n🎉 HOÀN TẤT! Đã đồng bộ tỉ số ${count} trận đấu vào cơ sở dữ liệu.`);
           }
 
-          main().catch(err => {
-            console.error("❌ Phát sinh sự cố ngoài dự kiến:", err.message);
+          run().catch(err => {
+            console.error("Lỗi:", err.message);
             process.exit(1);
           });
           EOF
