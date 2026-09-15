@@ -1,0 +1,15 @@
+name: Sync Liquipedia
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Chạy tự động mỗi 4 tiếng
+  workflow_dispatch:      # Có nút bấm chạy thủ công ngay lập tức
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Liquipedia & Update
+        run: |
+          echo "Đang đồng bộ kết quả mới nhất từ Liquipedia..."
+          # Script kiểm tra và update dữ liệu qua API
