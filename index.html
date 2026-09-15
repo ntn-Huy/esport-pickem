@@ -82,7 +82,7 @@
       filter: drop-shadow(0 0 4px rgba(0, 242, 254, 0.6));
     }
 
-    /* Ẩn hiện các trường chỉnh sửa theo chế độ Wiki Edit Mode */
+    /* Chế độ Edit Wiki trực tiếp */
     .wiki-edit-field { display: none; }
     body.wiki-editing .wiki-edit-field { display: inline-block; }
     body.wiki-editing .wiki-view-field { display: none; }
@@ -101,9 +101,8 @@
       <div class="max-w-5xl mx-auto flex flex-col items-center">
         <div class="flex flex-wrap items-center justify-center gap-2 mb-2">
           <span class="text-[10px] font-orbitron font-black tracking-widest text-amber-400 uppercase bg-blue-950/90 border border-blue-700/50 px-3 py-1 rounded-full">
-            ARENA OF GLORY • WINTER 2026 WIKI
+            ARENA OF GLORY • WINTER 2026 WIKI HUB
           </span>
-          <!-- Nút Bật/Tắt chế độ Edit Wiki trực tiếp -->
           <button onclick="toggleWikiEditMode()" id="wikiEditBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-1 rounded-full border border-slate-600 transition flex items-center gap-1.5 font-bold shadow-md">
             <i class="fa-solid fa-pen-to-square"></i> <span id="wikiEditText">Edit Wiki Mode: OFF</span>
           </button>
@@ -123,8 +122,8 @@
             <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i>
             <span>Điểm Pick'em: <strong id="totalPointsBadge" class="text-white text-sm">0</strong>đ</span>
           </div>
-          <button onclick="toggleAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1">
-            <i class="fa-solid fa-gear text-amber-400"></i> Quản Trị
+          <button onclick="toggleAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-gear text-amber-400"></i> Quản Trị Admin
           </button>
         </div>
       </div>
@@ -147,7 +146,7 @@
         <div class="glass-panel p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="font-orbitron font-bold text-sm sm:text-base text-white uppercase tracking-wider">LỊCH THI ĐẤU & CẬP NHẬT TỈ SỐ</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Nhấp vào ô tỉ số ở giữa trận đấu để chỉnh sửa kết quả thực tế.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Bật <strong class="text-amber-400">Edit Wiki Mode</strong> để sửa trực tiếp tỉ số hoặc quản lý tên vòng đấu ngay trên giao diện.</p>
           </div>
           <div class="flex items-center space-x-2 overflow-x-auto pb-1 font-esport text-xs" id="weekFilters"></div>
         </div>
@@ -161,7 +160,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
               <h3 class="font-orbitron text-amber-400 font-bold uppercase text-sm sm:text-base">BẢNG XẾP HẠNG VÒNG BẢNG (WIKI STYLE)</h3>
-              <p class="text-xs text-slate-400">Tự động tổng hợp số liệu từ kết quả thi đấu thực tế.</p>
+              <p class="text-xs text-slate-400">Tự động tổng hợp số liệu hoặc cho phép chỉnh sửa trực tiếp khi bật Edit Wiki Mode.</p>
             </div>
             <button onclick="renderStandings()" class="px-3 py-1.5 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 text-xs font-bold transition flex items-center gap-1.5 self-start">
               <i class="fa-solid fa-rotate"></i> Làm Mới Bảng Điểm
@@ -243,6 +242,7 @@
       </div>
 
       <div class="space-y-4 py-4 text-xs">
+        <!-- Thêm Đội -->
         <div class="border border-slate-800 p-3.5 rounded-lg bg-slate-950/70 space-y-2.5">
           <h3 class="font-bold font-orbitron text-cyan-400 uppercase">Thêm Đội Tuyển Mới</h3>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -255,6 +255,7 @@
           </div>
         </div>
 
+        <!-- Thêm Trận Đấu -->
         <div class="border border-slate-800 p-3.5 rounded-lg bg-slate-950/70 space-y-2.5">
           <h3 class="font-bold font-orbitron text-cyan-400 uppercase">Thêm Trận Đấu Mới</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -297,7 +298,7 @@
       }
     }
 
-    let teams = JSON.parse(localStorage.getItem('esport_teams_wiki_v3')) || {
+    let teams = JSON.parse(localStorage.getItem('esport_teams_wiki_v4')) || {
       'sgp': { id: 'sgp', name: 'Saigon Phantom', short_name: 'SGP', logo_url: 'https://liquipedia.net/commons/images/d/d7/Saigon_Phantom_2023_allmode.png', primary_color: '#eab308' },
       'fl':  { id: 'fl', name: 'Team Flash', short_name: 'FL', logo_url: 'https://liquipedia.net/commons/images/3/36/Team_Flash_2024_allmode.png', primary_color: '#dc2626' },
       'bme': { id: 'bme', name: 'BOOM Esports VN', short_name: 'BME', logo_url: 'https://liquipedia.net/commons/images/5/50/BOOM_Esports_allmode.png', primary_color: '#9333ea' },
@@ -309,7 +310,7 @@
       'rrq': { id: 'rrq', name: 'Rex Regum Qeon VN', short_name: 'RRQ', logo_url: 'https://liquipedia.net/commons/images/6/67/Rex_Regum_Qeon_allmode.png', primary_color: '#d97706' }
     };
 
-    let matches = JSON.parse(localStorage.getItem('esport_matches_wiki_v3')) || [
+    let matches = JSON.parse(localStorage.getItem('esport_matches_wiki_v4')) || [
       { id: 'm1', week: 'Tuần 1', stage: 'group', round_name: 'Vòng Bảng - Trận 1', team1_id: 'sgp', team2_id: 'fl', score_team1: 3, score_team2: 0, bo_format: 5, match_date: '18/09', status: 'completed' },
       { id: 'm2', week: 'Tuần 1', stage: 'group', round_name: 'Vòng Bảng - Trận 2', team1_id: 'fpl', team2_id: 'bme', score_team1: 3, score_team2: 2, bo_format: 5, match_date: '18/09', status: 'completed' },
       { id: 'm3', week: 'Tuần 2', stage: 'group', round_name: 'Vòng Bảng - Trận 3', team1_id: '1s', team2_id: 'box', score_team1: null, score_team2: null, bo_format: 5, match_date: '25/09', status: 'upcoming' },
@@ -318,14 +319,14 @@
       { id: 'p_final', week: 'Playoff', stage: 'grand_final', round_name: 'Chung Kết Tổng', team1_id: 'sgp', team2_id: 'bme', score_team1: null, score_team2: null, bo_format: 7, match_date: '20/10', status: 'upcoming' }
     ];
 
-    let predictions = JSON.parse(localStorage.getItem('esport_predictions_wiki_v3')) || {};
+    let predictions = JSON.parse(localStorage.getItem('esport_predictions_wiki_v4')) || {};
     let selectedWeek = 'Tất cả';
-    let currentUser = localStorage.getItem('esport_user_wiki_v3') || 'Fan Liên Quân';
+    let currentUser = localStorage.getItem('esport_user_wiki_v4') || 'Fan Liên Quân';
     document.getElementById('userNameInput').value = currentUser;
 
     function changeUser(v) {
       currentUser = v.trim() || 'Fan Liên Quân';
-      localStorage.setItem('esport_user_wiki_v3', currentUser);
+      localStorage.setItem('esport_user_wiki_v4', currentUser);
       init();
     }
 
@@ -410,7 +411,6 @@
 
               <div class="col-span-2 flex flex-col items-center justify-center bg-slate-950 z-10 space-y-1">
                 <div class="font-orbitron font-black text-xl sm:text-2xl flex items-center space-x-1">
-                  <!-- Khi bật Edit Wiki Mode, ô input hiện ra để sửa trực tiếp như Liquipedia -->
                   <input type="number" min="0" max="7" value="${m.score_team1 !== null ? m.score_team1 : ''}" placeholder="-" onchange="updateRealScore('${m.id}', 's1', this.value)" class="wiki-edit-field w-9 h-9 bg-slate-900 border border-amber-400 rounded text-center text-amber-400 font-bold focus:outline-none text-sm">
                   <span class="wiki-view-field font-orbitron ${m.score_team1 > m.score_team2 ? 'text-amber-400' : 'text-slate-300'}">${m.score_team1 !== null ? m.score_team1 : '-'}</span>
                   
@@ -430,7 +430,7 @@
               </div>
             </div>
 
-            <!-- PICK'EM DỰ ĐOÁN -->
+            <!-- PICK'EM -->
             <div class="px-4 py-2.5 bg-slate-950/80 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs gap-2">
               <div class="flex items-center space-x-2">
                 <span class="text-slate-400 font-bold">Dự đoán của bạn:</span>
@@ -462,18 +462,18 @@
 
       m.status = (m.score_team1 !== null && m.score_team2 !== null) ? 'completed' : 'upcoming';
 
-      localStorage.setItem('esport_matches_wiki_v3', JSON.stringify(matches));
+      localStorage.setItem('esport_matches_wiki_v4', JSON.stringify(matches));
       renderStandings();
       calculateTotalPoints();
-      confetti({ particleCount: 25, spread: 30, origin: { y: 0.5 } });
+      confetti({ particleCount: 20, spread: 30, origin: { y: 0.5 } });
     }
 
     function pickScore(matchId, winnerId, s1, s2) {
       predictions[matchId] = { winner_id: winnerId, score_1: s1, score_2: s2 };
-      localStorage.setItem('esport_predictions_wiki_v3', JSON.stringify(predictions));
+      localStorage.setItem('esport_predictions_wiki_v4', JSON.stringify(predictions));
       renderMatches();
       calculateTotalPoints();
-      confetti({ particleCount: 35, spread: 35, origin: { y: 0.7 } });
+      confetti({ particleCount: 30, spread: 35, origin: { y: 0.7 } });
     }
 
     function renderStandings() {
@@ -580,7 +580,7 @@
 
       if (!id || !name || !short_name) return alert('Vui lòng điền đủ thông tin!');
       teams[id] = { id, name, short_name, logo_url, primary_color };
-      localStorage.setItem('esport_teams_wiki_v3', JSON.stringify(teams));
+      localStorage.setItem('esport_teams_wiki_v4', JSON.stringify(teams));
       alert('Thêm đội thành công!');
       toggleAdminModal();
       init();
@@ -605,7 +605,7 @@
       };
 
       matches.push(newMatch);
-      localStorage.setItem('esport_matches_wiki_v3', JSON.stringify(matches));
+      localStorage.setItem('esport_matches_wiki_v4', JSON.stringify(matches));
       alert('Tạo trận đấu thành công!');
       toggleAdminModal();
       init();
