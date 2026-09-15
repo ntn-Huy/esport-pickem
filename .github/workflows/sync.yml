@@ -1,15 +1,60 @@
-name: Sync Liquipedia
+name: Sync Liquipedia Real
 
 on:
   schedule:
     - cron: '0 */4 * * *' # Chạy tự động mỗi 4 tiếng
-  workflow_dispatch:      # Có nút bấm chạy thủ công ngay lập tức
+  workflow_dispatch:      # Có nút bấm "Run workflow" để cào thủ công ngay lập tức
 
 jobs:
-  update:
+  scrape-and-update:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Liquipedia & Update
+      - name: Chạy Script Đồng Bộ Liquipedia
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
-          echo "Đang đồng bộ kết quả mới nhất từ Liquipedia..."
-          # Script kiểm tra và update dữ liệu qua API
+          node -e '
+          const { createClient } = require("@supabase/supabase-js");
+
+          const LIQUIPEDIA_URL = "https://liquipedia.net/honorofkings/api.php?action=parse&page=Arena_of_Glory/2026/Winter/Group_Stage&prop=wikitext&format=json";
+
+          async function main() {
+            if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+              console.log("Chưa cấu hình Secrets SUPABASE. Bỏ qua ghi database.");
+              return;
+            }
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+            console.log("Đang lấy dữ liệu từ Liquipedia...");
+            const res = await fetch(LIQUIPEDIA_URL, {
+              headers: { "User-Agent": "AOGPickemBot/2.0 (contact: test@example.com)" }
+            });
+            const data = await res.json();
+            const text = data.parse?.wikitext?.["*"] || "";
+
+            // Trích xuất các trận đấu dạng {{Matchmaps |team1=... |team2=... |games1=... |games2=...}}
+            const regex = /team1=([^\n|]+)[\s\S]*?team2=([^\n|]+)[\s\S]*?games1=(\d+)[\s\S]*?games2=(\d+)/gi;
+            let match;
+            let count = 0;
+
+            while ((match = regex.exec(text)) !== null) {
+              const [, t1, t2, g1, g2] = match;
+              const s1 = parseInt(g1, 10);
+              const s2 = parseInt(g2, 10);
+
+              console.log(`Cập nhật trận: ${t1.trim()} [${s1} - ${s2}] ${t2.trim()}`);
+              
+              if (s1 > 0 || s2 > 0) {
+                count++;
+                await supabase.from("matches").update({
+                  score_team1: s1,
+                  score_team2: s2,
+                  status: "completed"
+                }).eq("round_name", "Vòng Bảng - Lượt Đi");
+              }
+            }
+            console.log(`Đã đồng bộ thành công ${count} trận đấu có tỉ số mới!`);
+          }
+          main().catch(err => { console.error(err); process.exit(1); });
+          '
