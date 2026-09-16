@@ -306,6 +306,7 @@
             <div class="flex flex-wrap gap-2">
               <button onclick="copyImportPrompt()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-600 px-3 py-1.5 rounded font-bold flex items-center gap-1.5"><i class="fa-regular fa-copy"></i> Sao chép Prompt mẫu cho AI</button>
               <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded font-bold flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Xuất dữ liệu hiện tại (JSON)</button>
+              <button onclick="clearAllData()" class="bg-rose-900/40 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-trash-can"></i> Xoá Trắng Dữ Liệu</button>
             </div>
             <textarea id="importJsonBox" rows="6" placeholder='Dán nội dung JSON vào đây, ví dụ: {"teams":[...],"matches":[...],"playoffRounds":[...]}' class="w-full bg-slate-900 p-2.5 rounded border border-slate-700 text-white font-mono text-[11px] leading-relaxed"></textarea>
             <button onclick="importData()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold p-2 rounded transition flex items-center justify-center gap-2"><i class="fa-solid fa-upload"></i> Nhập Dữ Liệu Vào Trang</button>
@@ -892,14 +893,34 @@
     }
 
     function deleteTeam(id) {
-      const used = matches.some(m => m.team1_id === id || m.team2_id === id);
-      if (used) { showToast('Đội này đang có trong lịch thi đấu, hãy xoá trận liên quan trước.', 'error'); return; }
-      if (!confirm('Xoá đội này khỏi danh sách?')) return;
-      delete teams[id];
-      persist();
-      init();
-    }
+  const relatedMatches = matches.filter(m => m.team1_id === id || m.team2_id === id);
+  
+  let confirmMsg = "Bạn có chắc chắn muốn xoá đội này?";
+  if (relatedMatches.length > 0) {
+    confirmMsg = `Đội này đang tham gia ${relatedMatches.length} trận đấu. Nếu xoá đội, TẤT CẢ các trận này cũng sẽ bị xoá. Bạn có đồng ý?`;
+  }
 
+  if (confirm(confirmMsg)) {
+    // 1. Xoá các trận liên quan trước
+    matches = matches.filter(m => m.team1_id !== id && m.team2_id !== id);
+    // 2. Xoá đội
+    delete teams[id];
+    
+    persist();
+    init();
+    showToast("Đã xoá đội và các dữ liệu liên quan");
+  }
+}
+    function clearAllData() {
+  if (confirm("HÀNH ĐỘNG NÀY SẼ XOÁ SẠCH DỮ LIỆU: Đội, Trận đấu, Tỉ số và Dự đoán. Bạn có chắc chắn không?")) {
+    teams = {};
+    matches = [];
+    predictions = {};
+    localStorage.clear(); // Xoá sạch bộ nhớ trình duyệt
+    persist();
+    location.reload(); // Tải lại trang
+  }
+}
     /* ============================= ADMIN: PLAYOFF ROUNDS ============================= */
     function addPlayoffRound() {
       const name = document.getElementById('newRoundName').value.trim();
@@ -1017,29 +1038,44 @@ Dữ liệu thô tôi có (dán vào đây):
     }
 
     function importData() {
-      const raw = document.getElementById('importJsonBox').value.trim();
-      if (!raw) { showToast('Chưa có nội dung JSON để nhập.', 'error'); return; }
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch (e) {
-        showToast('JSON không hợp lệ, kiểm tra lại định dạng.', 'error');
-        return;
-      }
+  const raw = document.getElementById('importJsonBox').value.trim();
+  if (!raw) { showToast('Chưa có nội dung JSON!', 'error'); return; }
+  
+  try {
+    const data = JSON.parse(raw);
+    // HỎI XÁC NHẬN GHI ĐÈ
+    const isOverwrite = confirm("BẠN CÓ MUỐN GHI ĐÈ KHÔNG?\n- Chọn OK: Xoá hết dữ liệu cũ, thay bằng dữ liệu mới (Chống trùng lặp).\n- Chọn Cancel: Chỉ thêm những gì còn thiếu.");
 
-      let addedTeams = 0, addedMatches = 0;
+    if (isOverwrite) {
+      teams = {};
+      matches = [];
+      playoffRounds = data.playoffRounds || [];
+    }
 
-      if (Array.isArray(data.teams)) {
-        data.teams.forEach(t => {
-          if (!t.id) return;
-          teams[t.id] = {
-            id: t.id, name: t.name || t.id.toUpperCase(),
-            short_name: (t.short_name || t.id).toUpperCase(),
-            logo_url: t.logo_url || '', primary_color: t.primary_color || '#00f2fe'
-          };
-          addedTeams++;
-        });
-      }
+    if (data.teams) {
+      data.teams.forEach(t => { teams[t.id] = t; });
+    }
+
+    if (data.matches) {
+      data.matches.forEach((m, idx) => {
+        const id = m.id || (m.kind + "_" + Date.now() + "_" + idx);
+        const existingIdx = matches.findIndex(x => x.id === id);
+        if (existingIdx >= 0 && !isOverwrite) {
+          matches[existingIdx] = m; // Cập nhật nếu gộp
+        } else {
+          matches.push({...m, id}); // Thêm mới
+        }
+      });
+    }
+
+    persist();
+    showToast("Đã cập nhật dữ liệu mới!");
+    document.getElementById('importJsonBox').value = '';
+    init(); // Vẽ lại giao diện
+  } catch (e) {
+    showToast("JSON không đúng định dạng!", "error");
+  }
+}
 
       if (Array.isArray(data.playoffRounds) && data.playoffRounds.length) {
         playoffRounds = data.playoffRounds.map(r => ({ id: r.id || ('r_' + Math.random().toString(36).slice(2, 8)), name: r.name || 'Vòng đấu' }));
